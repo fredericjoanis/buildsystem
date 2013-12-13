@@ -1,0 +1,1 @@
+call launcher.bat %~n0

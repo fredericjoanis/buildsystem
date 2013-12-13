@@ -1,0 +1,1 @@
+This folder should contain only commited data. Generated data goes to tmp/data

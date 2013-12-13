@@ -1,0 +1,16 @@
+The goal of these guidelines is to have a system where we follow convention over configurations.
+
+no uppercase in file names
+platform specific files add _platformspecifc at the end of the file (example_win32.cpp) --> if there's a example.cpp, the file will be excluded from build.
+
+Folder structure
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+build is all build-related files
+data is all data files
+doc is all documentation
+extern is all external projects that we include for linking
+output is where our built binaries are found
+projects is where sln files are located + .bat to launch generated projects
+src is where all source code is located
+tmp is where all intermediate files are located & generated projects located
+tools is where all .exe used for the project are located
