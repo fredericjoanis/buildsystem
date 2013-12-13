@@ -1,5 +1,3 @@
--- Notes : For windows, msbuild.exe must be in path (ex: C:\Windows\Microsoft.NET\Framework64\v4.0.30319) and VCTargetsPath to something such as C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0
-
 dofile("args.lua")
 
 if isBuildSystem == true then
@@ -21,8 +19,11 @@ end
 
 if string.startswith(compiler, "vs") then
     executeCmd("cmd /C ..\\projects\\launcher.bat " .. solutionName .. " noide")
-
-    executeCmd("msbuild \"" .. projectPath .. "/" .. solutionName .. ".sln\" /p:Configuration=" .. configuration)
+	
+	local folders = os.matchdirs(os.getenv("SystemRoot") .. "/Microsoft.NET/Framework64/v*")
+	-- Last folder should be highest version
+	msbuildversion = folders[#folders]
+    executeCmd( msbuildversion .. "/msbuild \"" .. projectPath .. "/" .. solutionName .. ".sln\" /p:Configuration=" .. configuration)
 elseif string.startswith(compiler, "xcode") then
     executeCmd("../projects/launcher " .. solutionName .. " noide" )
 elseif string.find(compiler , "gmake") ~= nil then
