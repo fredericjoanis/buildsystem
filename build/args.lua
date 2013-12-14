@@ -1,6 +1,7 @@
 -- Arg 0 : Ignore
 if _ARGS[1] == nil or _ARGS[2] == nil or _ARGS[3] == nil then
-    error("Error : Missing arguments.\nUsage : build.bat project compiler configuration [buildsystem]\nEx: build.bat detector vs2010 debug")
+    local callername = path.getbasename(debug.getinfo(4).source)
+    error("Error : Missing arguments.\nUsage : " .. callername .. " project compiler configuration [buildsystem]\nEx: " .. callername .. " detector vs2010 debug")
 end
 
 project = string.lower(_ARGS[1])

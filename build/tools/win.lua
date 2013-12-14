@@ -11,20 +11,8 @@ configuration( { "windows" } )
 	{
 		"pushd ..\\..\\..\\extern\\lua & ..\\..\\tools\\premake\\premake.exe embed & popd"
 	}
-	
-configuration( { "windows", "release" } )
-	postbuildcommands
-	{
-		"copy /Y \"../../" .. outputRelease .. "\" \"..\\..\\..\\tools\\lua\""
-	}
-
+    
 dofile( "../extern/premake.lua" )
-configuration( { "windows", "release" } )
-	postbuildcommands
-	{
-		"copy /Y \"../../" .. outputRelease .. "\" \"..\\..\\..\\tools\\premake\""
-	}
-
 configuration "vs*"
 	defines     
     { 
