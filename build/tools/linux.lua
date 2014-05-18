@@ -6,9 +6,11 @@ if os.is64bit() then
    premakePath = "../../tools/premake/premake64"
 elseif os.isARM() then
    premakePath = "../../tools/premake/premakeARM"
+else
+   premakePath = "../../tools/premake/premake32"
 end
 
-dofile( "lua.lua" )
+dofile( "../extern/lua.lua" )
 configuration( { "linux" } )
 	prebuildcommands
 	{
@@ -16,7 +18,7 @@ configuration( { "linux" } )
                 "cd ../../../extern/lua && " .. premakePath .. " embed && cd ../../tmp/projects/tools_gmake_linux",
 	}
 
-dofile( "premake.lua" )
+dofile( "../extern/premake.lua" )
 configuration "linux or bsd"
     defines     
     { 

@@ -650,7 +650,99 @@
 		buildtargets(cfg)
 
 	end
+
+	local function tabHasElement(tab)
+		if tab == nil then
+			return false
+		end
+		for fname, _ in pairs(tab) do
+			return true
+		end
+		return false
+	end
+
+	local function valueaskey(map)
+		if tabHasElement(map) == false then
+			return map
+		end
+
+		local newMap = { }
+		for _, fname in ipairs(map) do
+			newMap[fname] = true
+		end
+		return newMap
+	end
 	
+	local function excludefilesnotvs(cfg)
+		if _ACTION ~= 'vs2010' and _ACTION ~= 'vs2012' and _ACTION ~= 'vs2013' then
+			for fname, _ in pairs(cfg.excludefilesfrombuild) do
+				if cfg.excludefilesfrombuildexception[fname] == nil then
+					cfg.excludes[fname] = true
+				end
+			end
+		end
+	end
+
+	local function generateBlob(prj, cfg, rootcfg)
+		if cfg.name == nil then
+			return nil
+		end
+
+		-- generate blob
+		local blobDefined = tabHasElement(cfg.blobfiles)
+		local blobfile = nil
+		local hasConfigSupport = (_ACTION == 'vs2010' or _ACTION == 'vs2012' or _ACTION == 'vs2013')
+		
+		local relBlobFile = nil
+		if blobDefined then
+			if cfg.blobdir == nil then
+				cfg.blobdir = "."
+			end
+
+			local absBlobDir = path.getabsolute(path.join(prj.location, cfg.blobdir))
+			local relBlobDir = path.getrelative(prj.location, absBlobDir)
+			
+			os.mkdir(absBlobDir)
+			
+			local blobName = "/blob_" .. prj.name .. "_" .. cfg.name .. ".cpp"
+			if hasConfigSupport == false then
+				blobName = "/blob_" .. prj.name .. ".cpp"
+			end
+
+			absBlobFile = absBlobDir .. blobName
+			relBlobFile = relBlobDir .. blobName
+			io.output(absBlobFile, "w+b")
+
+			for fname, _ in pairs(cfg.blobfiles) do
+				if cfg.excludes[fname] == nil and (cfg.excludefilesfrombuild[fname] == nil or cfg.excludefilesfrombuildexception[fname] ~= nil) then
+					cfg.excludefilesfrombuild[fname] = true
+					if hasConfigSupport == false then
+						rootcfg.excludes[fname] = true
+						cfg.excludes[fname] = true
+					end
+					io.write("#include \"" .. fname .. "\"\n")
+				end
+			end
+
+			io.close()
+		end
+
+		return relBlobFile
+	end
+
+	local function insertAsKeyOrValue(tableIn, valueIn)
+		local hasIndex = false
+		for i, _ in ipairs(tableIn) do
+			hasIndex = true
+			break
+		end
+
+		if hasIndex then
+			table.insert(tableIn, valueIn)
+		else
+			tableIn[valueIn] = true
+		end
+	end
 
 --
 -- Post-process a project configuration, applying path fix-ups and other adjustments
@@ -666,7 +758,7 @@
 		cfg.project   = prj
 		cfg.shortname = premake.getconfigname(cfg.name, cfg.platform, true)
 		cfg.longname  = premake.getconfigname(cfg.name, cfg.platform)
-		
+
 		-- set the project location, if not already set
 		cfg.location = cfg.location or cfg.basedir
 		
@@ -682,23 +774,53 @@
 		if cfg.kind == "SharedLib" and platform.nosharedlibs then
 			cfg.kind = "StaticLib"
 		end
+
+		excludefilesnotvs(cfg)
 		
+		if cfg.name == nil then
+			local hasConfigSupport = (_ACTION == 'vs2010' or _ACTION == 'vs2012' or _ACTION == 'vs2013')
+			local blobAdded = false
+
+			local platforms = prj.solution.platforms or { }
+			if not table.contains(platforms, "Native") then
+				platforms = table.join(platforms, { "Native" })
+			end
+
+			for _, platform in ipairs(platforms) do
+				for cfg2 in premake.eachconfig(prj, platform) do
+					cfg2.excludes = valueaskey(cfg2.excludes)
+					cfg2.excludefilesfrombuild = valueaskey(cfg2.excludefilesfrombuild)
+					cfg2.excludefilesfrombuildexception = valueaskey(cfg2.excludefilesfrombuildexception)
+					cfg2.blobfiles = valueaskey(cfg2.blobfiles)
+
+					local fname = generateBlob(prj, cfg2, cfg)
+					if fname ~= nil then
+						if hasConfigSupport or blobAdded == false then
+							table.insert(cfg.files, fname)
+							blobAdded = true
+						
+							--Exclude newly created files from other builds then the one concerned.
+							for cfg3 in premake.eachconfig(prj, platform) do							
+								if cfg2.name ~= cfg3.name then
+									insertAsKeyOrValue(cfg3.excludefilesfrombuild, fname)
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+				
 		-- remove excluded files from the file list
 		local files = { }
 		for _, fname in ipairs(cfg.files) do
-			local excluded = false
-			for _, exclude in ipairs(cfg.excludes) do
-				excluded = (fname == exclude)
-				if (excluded) then break end
-			end
-						
-			if (not excluded) then
+			if cfg.excludes[fname] == nil then
 				table.insert(files, fname)
 			end
 		end
 		cfg.files = files
 
-		-- fixup the data		
+		-- fixup the data
 		for name, field in pairs(premake.fields) do
 			-- re-key flag fields for faster lookups
 			if field.isflags then

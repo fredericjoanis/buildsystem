@@ -79,6 +79,14 @@
 		_p(2,'<UseDebugLibraries>%s</UseDebugLibraries>', iif(optimisation(cfg) == "Disabled","true","false"))
 		_p(2,'<CharacterSet>%s</CharacterSet>',iif(cfg.flags.Unicode,"Unicode","MultiByte"))
 
+		if _ACTION == "vs2012" then
+			_p(2,'<PlatformToolset>%s</PlatformToolset>', "v110")
+		end
+
+		if _ACTION == "vs2013" then
+			_p(2,'<PlatformToolset>%s</PlatformToolset>', "v120")
+		end
+
 		if cfg.flags.MFC then
 			_p(2,'<UseOfMfc>%s</UseOfMfc>', iif(cfg.flags.StaticRuntime, "Static", "Dynamic"))
 		end
@@ -530,9 +538,14 @@
 				local translatedpath = path.translate(file.name, "\\")
 				_p(2,'<ClCompile Include=\"%s\">', translatedpath)
 				for _, cfginfo in ipairs(configs) do
+					local cfg = premake.getconfig(prj, cfginfo.src_buildcfg, cfginfo.src_platform)
 					if config_mappings[cfginfo] and translatedpath == config_mappings[cfginfo] then
 						_p(3,'<PrecompiledHeader '.. if_config_and_platform() .. '>Create</PrecompiledHeader>', premake.esc(cfginfo.name))
 						config_mappings[cfginfo] = nil  --only one source file per pch
+					end
+
+					if cfg.excludefilesfrombuild[file.name] ~= nil and cfg.excludefilesfrombuildexception[file.name] == nil then
+						_p(3,'<ExcludedFromBuild '.. if_config_and_platform() .. '>true</ExcludedFromBuild>', premake.esc(cfginfo.name))
 					end
 				end
 				_p(2,'</ClCompile>')

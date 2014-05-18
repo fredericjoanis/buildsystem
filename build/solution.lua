@@ -7,6 +7,7 @@ solution( solutionName .. "_" .. _ACTION .. "_" .. currentOS )
     {
         "debug",
         "release",
+        "noblob",
     }
     
     location ( "../tmp/projects/" .. solutionName .. "_" .. _ACTION .. "_" .. currentOS )

@@ -18,6 +18,18 @@
 			scope = "container",
 		},
 
+		blobfiles =
+		{
+			kind  = "filelist",
+			scope = "config",
+		},
+
+		blobdir =
+		{
+			kind = "path",
+			scope = "config",
+		},
+
 		buildaction =
 		{
 			kind  = "string",
@@ -74,6 +86,18 @@
 		},
 
 		excludes =
+		{
+			kind  = "filelist",
+			scope = "config",
+		},
+
+		excludefilesfrombuild =
+		{
+			kind  = "filelist",
+			scope = "config",
+		},
+
+		excludefilesfrombuildexception =
 		{
 			kind  = "filelist",
 			scope = "config",

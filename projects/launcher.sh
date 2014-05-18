@@ -5,9 +5,14 @@ IFS='_ ' read -a arr <<< $1
 solution=${arr[0]}
 ide=${arr[1]}
 os=${arr[2]}
+version=$(uname -m)
 
 if [ "$OSTYPE" = "linux-gnu" ]; then
-  ../tools/premake/premake64 --file=../build/$solution/$os.lua $ide
+  if [ "$version" = "x86_64" ]; then
+     ../tools/premake/premake64 --file=../build/$solution/$os.lua $ide
+  elif [ "$version" = "i686" ]; then
+     ../tools/premake/premake32 --file=../build/$solution/$os.lua $ide
+  fi
 elif [ "$OSTYPE" = "linux-gnueabihf" ]; then
   ../tools/premake/premakeARM --file=../build/$solution/$os.lua $ide
 fi

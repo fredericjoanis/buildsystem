@@ -1,6 +1,7 @@
 WARNING_AS_ERROR = false
 version = "0.0.1"
 usingProjectName = "premake"
+lambdaPremake = true
 dofile("../project.lua")
 kind "ConsoleApp"
 language "C"

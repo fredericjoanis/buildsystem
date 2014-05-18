@@ -23,14 +23,10 @@ local unittestDirPath = buildDirPath("unittests")
 local unittestsFilePath = buildFilePath("unittests")
 local metricsFilePath = buildFilePath("metrics")
 
-if unittestsFilePath ~= nil and os.isfile(unittestsFilePath) then
+if os.isfile(unittestsFilePath) then
     executeCmd(unittestsFilePath .. " --gtest_output=xml:" .. unittestDirPath .. "/" .. project .. "_unittests_output.xml")
-else
-    print "unittests not found"
 end
 
-if metricsFilePath ~= nil and os.isfile(metricsFilePath) then
+if os.isfile(metricsFilePath) then
     executeCmd("cd " .. projectPath .. " && " .. metricsFilePath)
-else
-    print "metrics not found"
 end

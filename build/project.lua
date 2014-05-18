@@ -4,6 +4,7 @@ if version == nil then
 	version = "0.0.0"
 end
 
+
 local srcPath = "../src/" .. projectName
 local isExtern = false
 
@@ -19,6 +20,10 @@ if usingProjectName == nil then
 	usingProjectName = projectName
 end
 
+if useBlob == nil then
+    useBlob = true
+end
+
  -- A project defines one build target
    project( usingProjectName )
         language "C++"
@@ -26,31 +31,41 @@ end
         if isExtern == true then
             kind "StaticLib"
         end
-      
-        objdir ( "../tmp/" .. usingProjectName .. "_" .. _ACTION .. "_" .. currentOS .. "/" .. version )
-
+        
+        local tmpdir = "../tmp/" .. usingProjectName .. "_" .. _ACTION .. "_" .. currentOS .. "/" .. version
+        objdir( tmpdir )
+        
         files
         {
             srcPath .. "/**",
         }
         
-        if os.is("windows") then
-            excludes
-            {
-                "../**linux*",
-                "../**mac*",
-                "../**_android*",
-                "../**_ios*",
-            }
-        elseif os.is("linux") then
-            excludes
-            {
-                "../**/*_win*",
-                "../**/*_mac*",
-                "../**/*_android*",
-                "../**/*_ios*",
-            }
+        if lambdaPremake ~= true then
+            if os.is("windows") then
+                excludefilesfrombuild
+                {
+                    "../**linux*",
+                    "../**mac*",
+                    "../**_android*",
+                    "../**_ios*",
+                }
+            elseif os.is("linux") then
+                excludefilesfrombuild
+                {
+                    "../**/*_win*",
+                    "../**/*_mac*",
+                    "../**/*_android*",
+                    "../**/*_ios*",
+                }
+            end
         end
+        
+        includedirs
+        {
+            srcPath,
+            "../src",
+            "../extern",
+        }
 
         -- FJ: Should create the NoDefaultFlag flag.
         flags 
@@ -77,12 +92,14 @@ end
 		local lua = path.getabsolute("../tools/lua/lua")
 		if os.is("windows") then
 			lua = lua .. ".exe"
-                elseif os.is("linux") then
-                        if os.is64bit() then
-                           lua = lua .. "64"
-                        elseif os.isARM() then
-                           lua = lua .. "ARM"
-                        end
+        elseif os.is("linux") then
+            if os.is64bit() then
+               lua = lua .. "64"
+            elseif os.isARM() then
+               lua = lua .. "ARM"
+            else
+               lua = lua .. "32"
+            end
 		end
 
 		local postBuild = false
@@ -90,16 +107,29 @@ end
 			postBuild = true
 		end
 		
+    if lambdaPremake ~= true then
+        configuration "debug or release"
+            blobdir( tmpdir )
+            
+            blobfiles
+            {
+                srcPath .. "/**.c",
+                srcPath .. "/**.cc",
+                srcPath .. "/**.cpp",
+            }
+    end
+        
 	configuration "linux"
-			buildoptions
-			{
-				"-std=c++0x",
-			}
+        buildoptions
+        {
+            "-std=c++0x",
+        }
 	
 	
     configuration "debug"
 		outputDebug = "../output/debug/" .. usingProjectName .. "_" .. _ACTION .. "_" .. currentOS .. "/" .. version
-        targetdir ( outputDebug )
+        targetdir( outputDebug )
+        debugdir( outputDebug )
          defines 
          {
             "DEBUG",
@@ -118,12 +148,6 @@ end
 			}
 		end
         
-    configuration "windows"
-        buildoptions
-        {
-            "/MP"
-        }
-        
     configuration { "windows", "release" }
         buildoptions
 			{
@@ -134,6 +158,8 @@ end
     configuration "release"
 		outputRelease = "../output/release/" .. usingProjectName .. "_" .. _ACTION .. "_" .. currentOS .. "/" .. version
         targetdir ( outputRelease )
+        debugdir( outputRelease )
+        
         defines
         {
            "NDEBUG",
@@ -152,7 +178,31 @@ end
 				lua .. " --file=" .. "\"" .. postbuildFile .. "\" \"" .. path.getabsolute(outputRelease) .. "\""
 			}
 		end
+        
+    configuration "noblob"
+		outputNoblob = "../output/noblob/" .. usingProjectName .. "_" .. _ACTION .. "_" .. currentOS .. "/" .. version
+        targetdir ( outputNoblob )
+        debugdir( outputNoblob )
+        
+        defines
+        {
+           "NDEBUG",
+		   "_CRT_SECURE_NO_WARNINGS",
+        }
+        
+        flags 
+        {
+           "OptimizeSpeed",
+        }
+		
+		if postBuild then
+			postbuildcommands
+			{
+				lua .. " --file=" .. "\"" .. postbuildFile .. "\" \"" .. path.getabsolute(outputNoblob) .. "\""
+			}
+		end
     
     usingProjectName = nil
+    
     -- Always finish this file with configuration "*"
     configuration "*"
